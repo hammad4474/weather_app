@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:weather_app/view/weather_app_homescreen.dart';
+import 'package:weather_app/utils/page_transitions.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => WeatherAppHomescreen()),
+          FadeRoute(page: WeatherAppHomescreen()),
         );
       }
     });
@@ -78,9 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     _timer.cancel();
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => WeatherAppHomescreen(),
-                      ),
+                      ScaleRoute(page: WeatherAppHomescreen()),
                     );
                   },
                   child: Padding(

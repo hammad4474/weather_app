@@ -58,5 +58,5 @@ class WeatherService {
   }
 }
 
-// lib/api_key.dart
-const String apiKey = "4d1c383e514f4e1ea6154708253105";
+// API Key for WeatherAPI.com
+const String apiKey = "f23b14adcc6a4bbeadf70734250207";

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:weather_app/Providers/theme_provider.dart';
 import 'package:weather_app/Theme/theme.dart';
 import 'package:weather_app/view/splash_screen.dart';
@@ -14,12 +15,14 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeNotifierProvider);
-    return MaterialApp(
+    return GetMaterialApp(
       theme: ligthTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
+      defaultTransition: Transition.fade,
+      transitionDuration: Duration(milliseconds: 300),
     );
   }
 }
