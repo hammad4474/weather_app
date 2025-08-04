@@ -254,6 +254,8 @@ class _WeeklyForecastState extends State<WeeklyForecast> {
                     ),
                   ),
                 ),
+              // Add bottom padding to ensure content doesn't touch navigation bar
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
             ],
           ),
         ),

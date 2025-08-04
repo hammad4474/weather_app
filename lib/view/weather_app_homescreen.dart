@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:weather_app/Providers/theme_provider.dart';
 import 'package:weather_app/Services/api_service.dart';
 import 'package:weather_app/Services/location_service.dart';
@@ -130,9 +131,9 @@ class _WeatherAppHomescreenState extends ConsumerState<WeatherAppHomescreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeNotifierProvider);
+    final themeType = ref.watch(themeNotifierProvider);
     final notifier = ref.read(themeNotifierProvider.notifier);
-    final isDark = themeMode == ThemeMode.dark;
+    final isDark = themeType == ThemeType.dark;
 
     String iconPath = currentValue['condition']?['icon'] ?? '';
     String imageUrl = iconPath.isNotEmpty ? 'https:$iconPath' : '';
@@ -251,26 +252,27 @@ class _WeatherAppHomescreenState extends ConsumerState<WeatherAppHomescreen> {
                 // Theme Toggle Button
                 GestureDetector(
                   onTap: notifier.toggleTheme,
-                  child: Container(
-                    padding: EdgeInsets.all(Get.width * 0.025),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surface.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
+                  child: Tooltip(
+                    message: 'Theme: ${notifier.getThemeName()}',
+                    child: Container(
+                      padding: EdgeInsets.all(Get.width * 0.025),
+                      decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.surface.withOpacity(0.3),
-                        width: 1,
+                        ).colorScheme.surface.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surface.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Icon(
-                      isDark
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded,
-                      color: isDark ? Colors.amber : Colors.indigo,
-                      size: Get.width * 0.06,
+                      child: Icon(
+                        notifier.getThemeIcon(),
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: Get.width * 0.06,
+                      ),
                     ),
                   ),
                 ),
@@ -279,344 +281,345 @@ class _WeatherAppHomescreenState extends ConsumerState<WeatherAppHomescreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: Get.width * 0.04),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: Get.height * 0.02),
-              if (isLoading)
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 1000),
-                        tween: Tween<double>(begin: 0.8, end: 1.2),
-                        builder: (context, value, child) {
-                          return Transform.scale(
-                            scale: value,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 4,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.orangeAccent,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: Get.width * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: Get.height * 0.02),
+                if (isLoading)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Lottie.asset(
+                          'assets/loading.json',
+                          width: Get.width * 0.4,
+                          height: Get.height * 0.25,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        ),
+                        const SizedBox(height: 20),
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 1500),
+                          tween: Tween<double>(begin: 0.0, end: 1.0),
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Text(
+                                isLocationLoading
+                                    ? '📍 Getting your location...'
+                                    : '🌤️ Loading weather data...',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  if (currentValue.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$city${country.isNotEmpty ? ', $country' : ''}',
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: Get.width * 0.08, // Responsive font size
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        SizedBox(height: Get.height * 0.01),
+                        Text(
+                          '${currentValue['temp_c']}°C',
+                          style: TextStyle(
+                            fontSize: Get.width * 0.12, // Responsive font size
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "${currentValue['condition']['text']}",
+                          style: TextStyle(
+                            fontSize: Get.width * 0.045, // Responsive font size
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: Get.height * 0.02),
+                        imageWidget,
+                        Padding(
+                          padding: EdgeInsets.all(15),
+                          child: Container(
+                            height: 100,
+                            width: double.maxFinite,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 10,
+                                  spreadRadius: 3,
+                                ),
+                              ],
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 1500),
-                        tween: Tween<double>(begin: 0.0, end: 1.0),
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Text(
-                              isLocationLoading
-                                  ? '📍 Getting your location...'
-                                  : '🌤️ Loading weather data...',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.network(
+                                      "https://cdn-icons-png.flaticon.com/512/4148/4148460.png",
+                                      width: 30,
+                                      height: 30,
+                                    ),
+                                    Text(
+                                      "${currentValue['humidity']}%",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Humidity",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.network(
+                                      "https://cdn-icons-png.flaticon.com/512/2045/2045893.png",
+                                      width: 30,
+                                      height: 30,
+                                    ),
+                                    Text(
+                                      "${currentValue['wind_kph']} kph",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Wind",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.network(
+                                      "https://cdn-icons-png.flaticon.com/512/6281/6281340.png",
+                                      width: 30,
+                                      height: 30,
+                                    ),
+                                    Text(
+                                      "${hourly.isNotEmpty ? hourly.map((h) => h['temp_c']).reduce((a, b) => a > b ? a : b) : 'N/A'}",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Max Temp",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                )
-              else ...[
-                if (currentValue.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$city${country.isNotEmpty ? ', $country' : ''}',
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: Get.width * 0.08, // Responsive font size
-                          color: Theme.of(context).colorScheme.secondary,
-                          fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: Get.height * 0.01),
-                      Text(
-                        '${currentValue['temp_c']}°C',
-                        style: TextStyle(
-                          fontSize: Get.width * 0.12, // Responsive font size
-                          color: Theme.of(context).colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "${currentValue['condition']['text']}",
-                        style: TextStyle(
-                          fontSize: Get.width * 0.045, // Responsive font size
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: Get.height * 0.02),
-                      imageWidget,
-                      Padding(
-                        padding: EdgeInsets.all(15),
-                        child: Container(
-                          height: 100,
-                          width: double.maxFinite,
+                        SizedBox(height: 15),
+                        Container(
+                          height: 250,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context).colorScheme.primary,
-                                offset: Offset(1, 1),
-                                blurRadius: 10,
-                                spreadRadius: 3,
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(40),
+                            ),
+                            border: Border(
+                              top: BorderSide(
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
-                            ],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.network(
-                                    "https://cdn-icons-png.flaticon.com/512/4148/4148460.png",
-                                    width: 30,
-                                    height: 30,
-                                  ),
-                                  Text(
-                                    "${currentValue['humidity']}%",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Humidity",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.network(
-                                    "https://cdn-icons-png.flaticon.com/512/2045/2045893.png",
-                                    width: 30,
-                                    height: 30,
-                                  ),
-                                  Text(
-                                    "${currentValue['wind_kph']} kph",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Wind",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.network(
-                                    "https://cdn-icons-png.flaticon.com/512/6281/6281340.png",
-                                    width: 30,
-                                    height: 30,
-                                  ),
-                                  Text(
-                                    "${hourly.isNotEmpty ? hourly.map((h) => h['temp_c']).reduce((a, b) => a > b ? a : b) : 'N/A'}",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Max Temp",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 15),
-                      Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(40),
-                          ),
-                          border: Border(
-                            top: BorderSide(
-                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
-                        ),
-                        child: Column(
-                          children: [
-                            SizedBox(height: 20),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Today Forecast',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        SlideUpRoute(
-                                          page: WeeklyForecast(
-                                            currentValue: currentValue,
-                                            hourly: hourly,
-                                            pastWeek: pastWeek,
-                                            next7days: next7days,
-                                            city: city,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      'Weekly Forecast',
+                          child: Column(
+                            children: [
+                              SizedBox(height: 20),
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Today Forecast',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
                                         color:
                                             Theme.of(
                                               context,
-                                            ).colorScheme.onPrimary,
+                                            ).colorScheme.secondary,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          SlideUpRoute(
+                                            page: WeeklyForecast(
+                                              currentValue: currentValue,
+                                              hourly: hourly,
+                                              pastWeek: pastWeek,
+                                              next7days: next7days,
+                                              city: city,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        'Weekly Forecast',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Divider(
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                            SizedBox(height: 20),
-                            SizedBox(
-                              height: 145,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: hourly.length,
-                                itemBuilder: (context, index) {
-                                  final hour = hourly[index];
-                                  final now = DateTime.now();
-                                  final hourTime = DateTime.parse(hour['time']);
-                                  final isCurrentHour =
-                                      now.hour == hourTime.hour &&
-                                      now.day == hourTime.day;
-                                  return Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Container(
-                                      height: 60,
+                              Divider(
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                              SizedBox(height: 20),
+                              SizedBox(
+                                height: 145,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: hourly.length,
+                                  itemBuilder: (context, index) {
+                                    final hour = hourly[index];
+                                    final now = DateTime.now();
+                                    final hourTime = DateTime.parse(
+                                      hour['time'],
+                                    );
+                                    final isCurrentHour =
+                                        now.hour == hourTime.hour &&
+                                        now.day == hourTime.day;
+                                    return Padding(
                                       padding: EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            isCurrentHour
-                                                ? Colors.orangeAccent
-                                                : Colors.blueGrey,
-                                        borderRadius: BorderRadius.circular(40),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            isCurrentHour
-                                                ? 'Now'
-                                                : formateTime(hour['time']),
-                                            style: TextStyle(
-                                              color:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.secondary,
-                                              fontWeight: FontWeight.w500,
+                                      child: Container(
+                                        height: 60,
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              isCurrentHour
+                                                  ? Colors.orangeAccent
+                                                  : Colors.blueGrey,
+                                          borderRadius: BorderRadius.circular(
+                                            40,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              isCurrentHour
+                                                  ? 'Now'
+                                                  : formateTime(hour['time']),
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(height: 10),
-                                          Image.network(
-                                            'https:${hour['condition']?['icon']}',
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          SizedBox(height: 10),
-                                          Text(
-                                            '${hour['temp_c']} °C',
-                                            style: TextStyle(
-                                              color:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.secondary,
-                                              fontWeight: FontWeight.w500,
+                                            SizedBox(height: 10),
+                                            Image.network(
+                                              'https:${hour['condition']?['icon']}',
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.cover,
                                             ),
-                                          ),
-                                        ],
+                                            SizedBox(height: 10),
+                                            Text(
+                                              '${hour['temp_c']} °C',
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                ],
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
               ],
-            ],
+            ),
           ),
         ),
       ),

@@ -14,11 +14,13 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeNotifierProvider);
+    final themeNotifier = ref.watch(themeNotifierProvider.notifier);
+    final themeType = ref.watch(themeNotifierProvider);
+
     return GetMaterialApp(
       theme: ligthTheme,
       darkTheme: darkTheme,
-      themeMode: themeMode,
+      themeMode: themeNotifier.getThemeMode(context),
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
       defaultTransition: Transition.fade,

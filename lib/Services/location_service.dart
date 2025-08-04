@@ -99,8 +99,8 @@ class LocationService {
         locationServiceFuture,
       ]).timeout(Duration(seconds: 2));
 
-      bool hasPermission = results[0] as bool;
-      bool serviceEnabled = results[1] as bool;
+      bool hasPermission = results[0];
+      bool serviceEnabled = results[1];
 
       if (!serviceEnabled) {
         throw Exception('Location services disabled');
