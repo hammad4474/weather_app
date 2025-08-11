@@ -8,6 +8,7 @@ import 'package:weather_app/Services/api_service.dart';
 import 'package:weather_app/Services/location_service.dart';
 import 'package:weather_app/view/weekly_forecast.dart';
 import 'package:weather_app/utils/page_transitions.dart';
+import 'package:weather_app/Services/update_service.dart';
 
 class WeatherAppHomescreen extends ConsumerStatefulWidget {
   const WeatherAppHomescreen({super.key});
@@ -270,6 +271,38 @@ class _WeatherAppHomescreenState extends ConsumerState<WeatherAppHomescreen> {
                       ),
                       child: Icon(
                         notifier.getThemeIcon(),
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: Get.width * 0.06,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: Get.width * 0.02),
+
+                // Update Check Button
+                GestureDetector(
+                  onTap: () {
+                    UpdateService.manualUpdateCheck(context);
+                  },
+                  child: Tooltip(
+                    message: 'Check for Updates',
+                    child: Container(
+                      padding: EdgeInsets.all(Get.width * 0.025),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surface.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surface.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.system_update,
                         color: Theme.of(context).colorScheme.secondary,
                         size: Get.width * 0.06,
                       ),
